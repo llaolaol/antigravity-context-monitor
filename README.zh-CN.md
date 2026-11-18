@@ -54,10 +54,10 @@
   - 支持点击最近活跃会话进行离线历史预览。
 - **中 / 英双语切换**：默认界面语言为**简体中文**，顶部工具栏支持一键切换 **中文 / EN** 并持久化保存。
 
-### 2. 可选标题栏顶部状态胶囊 (`top-capsule.mjs`)
-可选增强守护脚本，在客户端顶部标题栏注入紧凑胶囊条（`Context: 已用/上限(百分比) || 模型配额 || 输出速度 || 当前会话合计`），悬停显示详细统计，点击可一键展开/收起右侧 `Context & Tokens` 面板。
+### 2. 窗口顶部状态胶囊（安装即默认开启）
+安装并启用插件后**开箱即用，无需运行任何额外自启脚本**，自动在客户端顶部标题栏注入紧凑胶囊条（`Context: 已用/上限(百分比) || 模型配额 || 输出速度 || 当前会话合计`）。悬停可查看详细统计，点击可一键展开/收起右侧 `Context & Tokens` 面板；您也可以随时在侧边栏右上角点击 `胶囊: 开 / 关` 一键切换显示。
 
-> **架构说明**：侧边栏面板基于官方 Sidecar SDK 运行；顶部胶囊为**可选增强功能**，通过读取本机 `127.0.0.1` 的 `DevToolsActivePort` 向窗口标题栏注入 UI。
+> **架构说明**：侧边栏与内置顶部胶囊（`sidecars/context-monitor/capsule.mjs`）均由 Antigravity 托管的 Sidecar 进程统一启动，随插件启用/禁用自动启停；顶部胶囊仅连接本机 `127.0.0.1` 的 `DevToolsActivePort` 端口。
 
 ---
 
@@ -68,8 +68,7 @@ flowchart LR
   LS["Antigravity LanguageServer (127.0.0.1)"] -->|"GetUserStatus / GetCascadeTrajectorySteps"| Sidecar["sidecars/context-monitor/main.mjs"]
   Logs["本地 transcript.jsonl (桌面端 & CLI)"] -->|"降级读取与历史聚合"| Sidecar
   Sidecar -->|"辅助面板 Web UI"| Panel["Context & Tokens 侧边栏"]
-  Sidecar -->|"GET /api/metrics"| Capsule["top-capsule.mjs (可选)"]
-  Capsule -->|"127.0.0.1 CDP 标题栏胶囊"| Window["Antigravity 窗口标题栏"]
+  Sidecar -->|"内置 capsule.mjs (127.0.0.1 CDP)"| Window["Antigravity 窗口标题栏"]
 ```
 
 ---
@@ -77,7 +76,7 @@ flowchart LR
 ## 环境要求
 
 - **Antigravity 客户端**（支持桌面端，并可同时统计 CLI 会话）
-- **Node.js >= 22.0.0**（用于支持原生全局 `WebSocket` 与 `AbortSignal.timeout`）
+- **Node.js >= 22.0.0**（Antigravity 内置 Sidecar 已提供 Node 24+ 运行时；本地开发测试需 Node >= 22）
 
 ---
 
@@ -96,46 +95,18 @@ agy plugin install ./antigravity-context-monitor
 2. 将仓库目录复制（或软链接）到全局插件目录并命名为 `context-monitor`：
    - **macOS**：`~/.gemini/config/plugins/context-monitor/`
    - **Windows**：`%USERPROFILE%\.gemini\config\plugins\context-monitor\`
-3. 在 Antigravity 插件管理页面确认已启用 **Context & Token Monitor**，点击打开 `Context & Tokens` 侧边栏即可使用。
+3. 在 Antigravity 插件管理页面确认已启用 **Context & Token Monitor**，**顶部状态胶囊**与 **`Context & Tokens` 侧边栏面板**均会自动生效。
+
+> **从 v1.0.0 升级提示**：如果您此前手动执行过旧版 `install-top-capsule.sh` 或 `install-top-capsule.ps1`，请执行一次 `./uninstall-top-capsule.sh`（macOS）或 `.\uninstall-top-capsule.ps1`（Windows）清理旧版后台守护任务，避免重复进程。
 
 ---
-
-## 可选：启用顶部标题栏胶囊
-
-顶部胶囊会监听本机 `DevToolsActivePort` 并在窗口标题栏展示摘要胶囊。
-
-### macOS
-
-```bash
-chmod +x install-top-capsule.sh uninstall-top-capsule.sh
-./install-top-capsule.sh
-```
-
-卸载并关闭 LaunchAgent：
-
-```bash
-./uninstall-top-capsule.sh
-```
-
-### Windows (PowerShell)
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\install-top-capsule.ps1
-```
-
-卸载并清理计划任务：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\uninstall-top-capsule.ps1
-```
 
 ### 平台支持
 
 | 组件 | macOS | Windows | Linux |
 | :--- | :---: | :---: | :---: |
-| 官方 Sidecar 面板 (`sidecars/context-monitor`) | 支持 | 支持 | v1.0 暂未实测 |
-| 顶部胶囊脚本 (`top-capsule.mjs`) | 支持 | 支持 | v1.0 暂未适配 |
-| 自启安装脚本 (`install-top-capsule.*`) | 支持 (`launchd`) | 支持 (Windows 计划任务) | — |
+| 官方 Sidecar 面板 (`sidecars/context-monitor`) | 支持 | 支持 | 暂未实测 |
+| 内置顶部状态胶囊 (`capsule.mjs`) | 支持 | 支持 | 实验性（`~/.config/Antigravity`） |
 
 ---
 

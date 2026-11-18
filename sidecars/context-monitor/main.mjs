@@ -4,6 +4,7 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SidecarApp, Response } from 'sidecar_sdk';
+import { startTopCapsule } from './capsule.mjs';
 import {
   aggregateOverview,
   computeConversationMetrics,
@@ -32,6 +33,7 @@ const DEFAULT_PREFS = {
   customPaidMonthly: 19.99,
   referenceModel: 'gemini-3.8-flash',
   heatmapTheme: 'emerald',
+  topCapsule: true,
 };
 
 function loadPrefs() {
@@ -185,6 +187,51 @@ function readTranscriptCached(filePath) {
   }
 }
 
+async function getMetricsPayload(convId, clientEtag = '') {
+  const prefs = loadPrefs();
+  const [{ modelMap, account }, summaries] = await Promise.all([
+    getUserStatusCached(),
+    getTrajectoriesCached(),
+  ]);
+
+  if (!isValidConversationId(convId)) {
+    return { conversationId: null, empty: true, account, prefs };
+  }
+
+  const summaryMeta = summaries[convId] || null;
+  const transcriptPath = findTranscriptPath(convId);
+  const { sig: fileSig, records: transcriptRecords } = readTranscriptCached(transcriptPath);
+
+  let lsSteps = null;
+  const lsStepCount = summaryMeta?.stepCount ?? 0;
+  const etag = `${convId}|${lsStepCount}|${summaryMeta?.lastModifiedTime || ''}|${fileSig}|${prefs.budgetPref}|${prefs.currency}|${prefs.lang || 'zh-CN'}|${prefs.topCapsule !== false}`;
+  if (clientEtag && clientEtag === etag) {
+    return { conversationId: convId, unchanged: true, etag, account, prefs };
+  }
+
+  const lsRes = await callLanguageServer('GetCascadeTrajectorySteps', { cascadeId: convId }, 3000);
+  if (Array.isArray(lsRes?.steps) && lsRes.steps.length > 0) {
+    lsSteps = lsRes.steps;
+  }
+
+  const metrics = computeConversationMetrics({
+    conversationId: convId,
+    lsSteps,
+    transcriptRecords,
+    modelMap,
+    budgetPref: prefs.budgetPref,
+    summaryMeta,
+  });
+
+  return {
+    ...metrics,
+    etag,
+    account,
+    prefs,
+  };
+}
+
+let capsuleCtrl = null;
 const app = new SidecarApp();
 
 app.page('/', () => readFileSync(join(__dirname, 'index.html'), 'utf-8'));
@@ -212,53 +259,15 @@ app.api('/api/prefs', (data) => {
   }
   if (typeof data.referenceModel === 'string') allowed.referenceModel = data.referenceModel;
   if (typeof data.heatmapTheme === 'string') allowed.heatmapTheme = data.heatmapTheme;
-  return savePrefs(allowed);
+  if (typeof data.topCapsule === 'boolean') allowed.topCapsule = data.topCapsule;
+  const saved = savePrefs(allowed);
+  capsuleCtrl?.trigger();
+  return saved;
 }, 'POST');
 
 app.api('/api/metrics', async (data) => {
   const convId = String(data.conversationId || app.config.conversationId || '').trim();
-  const prefs = loadPrefs();
-  const [{ modelMap, account }, summaries] = await Promise.all([
-    getUserStatusCached(),
-    getTrajectoriesCached(),
-  ]);
-
-  if (!isValidConversationId(convId)) {
-    return { conversationId: null, empty: true, account, prefs };
-  }
-
-  const summaryMeta = summaries[convId] || null;
-  const transcriptPath = findTranscriptPath(convId);
-  const { sig: fileSig, records: transcriptRecords } = readTranscriptCached(transcriptPath);
-
-  // Check if LS trajectory exists in memory
-  let lsSteps = null;
-  const lsStepCount = summaryMeta?.stepCount ?? 0;
-  const etag = `${convId}|${lsStepCount}|${summaryMeta?.lastModifiedTime || ''}|${fileSig}|${prefs.budgetPref}|${prefs.currency}|${prefs.lang || 'zh-CN'}`;
-  if (data.etag && data.etag === etag) {
-    return { conversationId: convId, unchanged: true, etag, account, prefs };
-  }
-
-  const lsRes = await callLanguageServer('GetCascadeTrajectorySteps', { cascadeId: convId }, 3000);
-  if (Array.isArray(lsRes?.steps) && lsRes.steps.length > 0) {
-    lsSteps = lsRes.steps;
-  }
-
-  const metrics = computeConversationMetrics({
-    conversationId: convId,
-    lsSteps,
-    transcriptRecords,
-    modelMap,
-    budgetPref: prefs.budgetPref,
-    summaryMeta,
-  });
-
-  return {
-    ...metrics,
-    etag,
-    account,
-    prefs,
-  };
+  return getMetricsPayload(convId, data.etag || '');
 }, 'GET');
 
 app.api('/api/overview', async (data) => {
@@ -296,4 +305,15 @@ app.run().then((server) => {
   } catch {
     // Non-fatal
   }
+
+  capsuleCtrl = startTopCapsule({
+    getMetrics: (convId) => getMetricsPayload(convId),
+    isEnabled: () => loadPrefs().topCapsule !== false,
+  });
 });
+
+for (const sig of ['SIGINT', 'SIGTERM']) {
+  process.on(sig, () => {
+    Promise.resolve(capsuleCtrl?.stop()).finally(() => process.exit(0));
+  });
+}

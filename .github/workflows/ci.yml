@@ -45,4 +45,4 @@ jobs:
 
       - name: Lint shell scripts
         if: runner.os != 'Windows'
-        run: bash -n install-top-capsule.sh uninstall-top-capsule.sh
+        run: bash -n uninstall-top-capsule.sh

@@ -27,6 +27,7 @@ const state = {
     customPaidMonthly: 19.99,
     referenceModel: 'gemini-3.8-flash',
     heatmapTheme: 'emerald',
+    topCapsule: true,
   },
   isDark: false,
 };
@@ -140,6 +141,12 @@ function syncPrefsToControls() {
   $('sel-currency').value = state.prefs.currency || 'CNY';
   $('sel-ref-model').value = state.prefs.referenceModel || 'gemini-3.8-flash';
   $('sel-theme').value = state.prefs.heatmapTheme || 'emerald';
+  const capBtn = $('btn-capsule');
+  if (capBtn) {
+    const on = state.prefs.topCapsule !== false;
+    capBtn.textContent = t(on ? 'capsule.on' : 'capsule.off');
+    capBtn.style.opacity = on ? '1' : '0.6';
+  }
   if (prevLang !== state.prefs.lang) {
     applyStaticI18n();
   }
@@ -538,8 +545,14 @@ $('btn-back-live').addEventListener('click', () => {
 $('sel-lang').addEventListener('change', async (e) => {
   await updatePrefs({ lang: e.target.value });
   applyStaticI18n();
+  syncPrefsToControls();
   if (state.metrics) renderLive();
   if (state.overview) renderOverview();
+});
+
+$('btn-capsule').addEventListener('click', async () => {
+  const next = state.prefs.topCapsule === false;
+  await updatePrefs({ topCapsule: next });
 });
 
 $('sel-budget').addEventListener('change', async (e) => {

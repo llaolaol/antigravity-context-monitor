@@ -2,7 +2,7 @@
   "name": "context-monitor",
   "displayName": "Context & Token Monitor",
   "description": "Real-time context window usage, cache hit rate, generation speed, TTFT, and Desktop/CLI token analytics in the auxiliary pane.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "logo": "assets/logo.svg",
   "author": {
     "name": "llaolaol",

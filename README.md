@@ -53,10 +53,10 @@ Runs natively in Antigravity's auxiliary pane with zero third-party runtime depe
   - Clickable recent conversations list for offline preview.
 - **Bilingual UI (`中文` / `EN`)**: Defaults to Simplified Chinese (`zh-CN`) and `CNY`, with an instant 1-click language & currency switcher in the top bar (persisted locally).
 
-### 2. Optional Titlebar Top Capsule (`top-capsule.mjs`)
-An optional background helper that injects a compact pill into Antigravity's window titlebar (`Context: 50.0K/1.05M(4.8%) || Model Quota || 120 tok/s || Session Cost`). Clicking the capsule toggles the right-hand `Context & Tokens` side panel.
+### 2. Titlebar Top Capsule (Enabled by Default)
+Automatically injects a compact status pill into Antigravity's window titlebar (`Context: 50.0K/1.05M(4.8%) || Model Quota || 120 tok/s || Session Cost`) as soon as the plugin is enabled — **no separate background script required**. Clicking the capsule toggles the right-hand `Context & Tokens` side panel, and you can turn it off anytime using the `Capsule: On / Off` button in the side panel.
 
-> **Note**: The Sidecar panel uses the official Antigravity Sidecar SDK. The Top Capsule is an **optional** local enhancement that connects to Antigravity's local `127.0.0.1` Chrome DevTools port (`DevToolsActivePort`).
+> **Architecture**: Both the side panel and the built-in titlebar capsule (`sidecars/context-monitor/capsule.mjs`) run inside the Sidecar process managed by Antigravity. The capsule connects only to Antigravity's local `127.0.0.1` Chrome DevTools port (`DevToolsActivePort`).
 
 ---
 
@@ -67,8 +67,7 @@ flowchart LR
   LS["Antigravity LanguageServer (127.0.0.1)"] -->|"GetUserStatus / GetCascadeTrajectorySteps"| Sidecar["sidecars/context-monitor/main.mjs"]
   Logs["Local transcript.jsonl (Desktop & CLI)"] -->|"Fallback & Historical Overview"| Sidecar
   Sidecar -->|"Aux Pane Web UI"| Panel["Context & Tokens Panel"]
-  Sidecar -->|"GET /api/metrics"| Capsule["top-capsule.mjs (Optional)"]
-  Capsule -->|"127.0.0.1 CDP DOM Pill"| Window["Antigravity Window Titlebar"]
+  Sidecar -->|"Built-in capsule.mjs (127.0.0.1 CDP)"| Window["Antigravity Window Titlebar"]
 ```
 
 ---
@@ -76,7 +75,7 @@ flowchart LR
 ## Prerequisites
 
 - **Antigravity** (Desktop, or Desktop + CLI)
-- **Node.js >= 22.0.0** (required for native global `WebSocket` and `AbortSignal.timeout`)
+- **Node.js >= 22.0.0** (Antigravity's built-in Sidecar runtime includes Node 24+; Node >= 22 is needed for running local tests)
 
 ---
 
@@ -95,46 +94,18 @@ agy plugin install ./antigravity-context-monitor
 2. Copy the folder to your Antigravity global plugins directory as `context-monitor`:
    - **macOS**: `~/.gemini/config/plugins/context-monitor/`
    - **Windows**: `%USERPROFILE%\.gemini\config\plugins\context-monitor\`
-3. Enable **Context & Token Monitor** on the Antigravity Customizations / Plugins page and open the `Context & Tokens` side panel.
+3. Enable **Context & Token Monitor** on the Antigravity Customizations / Plugins page. Both the **Titlebar Top Capsule** and the **`Context & Tokens` side panel** will start automatically.
+
+> **Upgrading from v1.0.0?** If you previously ran the old `install-top-capsule.sh` or `install-top-capsule.ps1` daemon script, run `./uninstall-top-capsule.sh` (macOS) or `.\uninstall-top-capsule.ps1` (Windows) once to remove the legacy background task.
 
 ---
-
-## Optional: Enable the Titlebar Top Capsule
-
-The Top Capsule reads Antigravity's `DevToolsActivePort` file (`127.0.0.1` local CDP) and displays live metrics in the titlebar.
-
-### macOS
-
-```bash
-chmod +x install-top-capsule.sh uninstall-top-capsule.sh
-./install-top-capsule.sh
-```
-
-To disable and remove the LaunchAgent:
-
-```bash
-./uninstall-top-capsule.sh
-```
-
-### Windows (PowerShell)
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\install-top-capsule.ps1
-```
-
-To disable and remove the Scheduled Task:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\uninstall-top-capsule.ps1
-```
 
 ### Platform Support
 
 | Component | macOS | Windows | Linux |
 | :--- | :---: | :---: | :---: |
 | Official Sidecar Panel (`sidecars/context-monitor`) | Yes | Yes | Untested (expected compatible) |
-| Top Capsule Daemon (`top-capsule.mjs`) | Yes | Yes | Not officially supported in v1.0 |
-| Auto-start Scripts (`install-top-capsule.*`) | Yes (`launchd`) | Yes (Scheduled Task) | — |
+| Built-in Titlebar Top Capsule (`capsule.mjs`) | Yes | Yes | Experimental (`~/.config/Antigravity`) |
 
 ---
 

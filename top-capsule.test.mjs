@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
-import { buildPayload, extractConvIdFromUrl, resolveDevToolsPortFile } from './top-capsule.mjs';
+import { buildPayload, extractConvIdFromUrl, resolveDevToolsPortFile, startTopCapsule } from './top-capsule.mjs';
 import './sidecars/context-monitor/i18n.js';
 
 const { DICT, normalizeLang, t } = globalThis.__CM_I18N;
@@ -80,4 +80,15 @@ test('i18n dictionary maintains key parity between zh-CN and en', () => {
   assert.equal(normalizeLang('fr'), 'zh-CN');
   assert.equal(t('en', 'audit.rounds', { n: 5 }), '5 turns');
   assert.equal(t('zh-CN', 'audit.rounds', { n: 5 }), '5 轮');
+});
+
+test('startTopCapsule handles missing DevToolsActivePort cleanly and stops gracefully', async () => {
+  const ctrl = startTopCapsule({
+    getMetrics: async () => null,
+    isEnabled: () => true,
+    pollMs: 5000,
+    portFilePath: '/non-existent-dir/DevToolsActivePort',
+  });
+  ctrl.trigger();
+  await ctrl.stop();
 });
