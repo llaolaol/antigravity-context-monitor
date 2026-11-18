@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="frame-src 'none'; child-src 'none'">
+  <title>Context &amp; Tokens</title>
+  <script src="/preload.js"></script>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-main">
+        <span id="live-dot" class="status-dot" data-i18n-title="status.connecting" title="连接状态"></span>
+        <div class="title-wrap">
+          <div id="conv-title" class="conv-title">Context &amp; Tokens</div>
+          <div id="conv-sub" class="conv-sub" data-i18n="status.reading">正在读取当前会话…</div>
+        </div>
+        <button id="btn-back-live" class="pill-btn hidden" type="button" data-i18n="btn.backLive" data-i18n-title="btn.backLiveTitle" title="返回当前活跃会话">回到当前</button>
+      </div>
+      <div class="topbar-controls">
+        <span id="model-badge" class="badge badge-muted" data-i18n-title="ctrl.modelTitle" title="当前识别模型">—</span>
+        <select id="sel-budget" class="select-sm" data-i18n-title="ctrl.budgetTitle" title="上下文窗口上限">
+          <option value="auto" data-i18n="budget.auto">上限: 自动</option>
+          <option value="200k" data-i18n="budget.200k">上限: 200K</option>
+          <option value="983k" data-i18n="budget.983k">上限: 983K</option>
+          <option value="1m" data-i18n="budget.1m">上限: 1M</option>
+          <option value="2m" data-i18n="budget.2m">上限: 2M</option>
+        </select>
+        <select id="sel-currency" class="select-sm" data-i18n-title="ctrl.currencyTitle" title="参考金额币种">
+          <option value="CNY">¥ CNY</option>
+          <option value="USD">$ USD</option>
+          <option value="EUR">€ EUR</option>
+          <option value="GBP">£ GBP</option>
+          <option value="HKD">HK$ HKD</option>
+          <option value="TWD">NT$ TWD</option>
+          <option value="JPY">¥ JPY</option>
+        </select>
+        <select id="sel-lang" class="select-sm" data-i18n-title="ctrl.langTitle" title="界面语言">
+          <option value="zh-CN">中文</option>
+          <option value="en">EN</option>
+        </select>
+        <button id="btn-refresh" class="icon-btn" type="button" data-i18n-title="btn.refreshTitle" title="立即刷新">↻</button>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="live" role="tab" aria-selected="true" type="button" data-i18n="tab.live">当前会话</button>
+      <button class="tab" data-tab="overview" role="tab" aria-selected="false" type="button" data-i18n="tab.overview">Token 一览</button>
+    </nav>
+
+    <!-- Tab 1: Live Conversation -->
+    <main id="view-live" class="view">
+      <div class="cost-strip">
+        <span id="round-cost-text" data-i18n="cost.roundEmpty">本轮参考估值：—</span>
+        <span id="session-cost-text" class="muted" data-i18n="cost.sessionEmpty">会话合计：—</span>
+      </div>
+
+      <!-- Card 1: Context Budget -->
+      <section class="card">
+        <div class="card-head">
+          <span class="card-title" data-i18n="card.context">核心上下文用量</span>
+          <span id="ctx-badge" class="badge badge-muted" data-i18n="card.loading">读取中</span>
+        </div>
+        <div class="progress-track">
+          <div id="ctx-bar" class="progress-fill" style="width:0%"></div>
+        </div>
+        <div class="stat-grid-3">
+          <div class="stat-box">
+            <div class="stat-lbl" data-i18n="card.used">当前已用</div>
+            <div id="ctx-used" class="stat-val">—</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-lbl" data-i18n="card.limit">预算上限</div>
+            <div id="ctx-limit" class="stat-val">—</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-lbl" data-i18n="card.remaining">剩余可用</div>
+            <div id="ctx-remaining" class="stat-val">—</div>
+          </div>
+        </div>
+        <div id="ctx-takeaway" class="takeaway" data-i18n="card.waitingSteps">等待会话步骤数据…</div>
+      </section>
+
+      <!-- Card 2: Speed & Latency -->
+      <section class="card">
+        <div class="card-head">
+          <span class="card-title" data-i18n="card.speed">最新生成速度与耗时</span>
+          <span id="speed-badge" class="badge badge-muted" data-i18n="card.pending">待生成</span>
+        </div>
+        <div class="stat-grid-4">
+          <div class="stat-box">
+            <div class="stat-lbl" data-i18n="card.speedOut">输出速度</div>
+            <div id="spd-val" class="stat-val accent">—</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-lbl" data-i18n="card.genDur">生成耗时</div>
+            <div id="spd-dur" class="stat-val">—</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-lbl" data-i18n="card.ttft">首字延迟</div>
+            <div id="spd-ttft" class="stat-val">—</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-lbl" data-i18n="card.thisOut">本次输出</div>
+            <div id="spd-out" class="stat-val">—</div>
+          </div>
+        </div>
+        <div id="spd-takeaway" class="takeaway" data-i18n="card.noSpeed">暂无输出统计…</div>
+      </section>
+
+      <!-- Drawer 3: Account Tier & Model Quotas -->
+      <details class="card drawer" open>
+        <summary class="drawer-head">
+          <span data-i18n="drawer.account">账号套餐与模型配额</span>
+          <span id="acct-badge" class="badge badge-muted">—</span>
+        </summary>
+        <div id="acct-body" class="drawer-body">
+          <div class="muted" data-i18n="drawer.accountLoading">正在读取账号配额…</div>
+        </div>
+      </details>
+
+      <!-- Drawer 4: Session Structure Audit -->
+      <details class="card drawer">
+        <summary class="drawer-head">
+          <span data-i18n="drawer.audit">会话结构拆解与请求明细</span>
+          <span id="audit-badge" class="badge badge-muted">—</span>
+        </summary>
+        <div id="audit-body" class="drawer-body"></div>
+      </details>
+
+      <!-- Drawer 5: Step Timeline -->
+      <details class="card drawer">
+        <summary class="drawer-head">
+          <span data-i18n="drawer.timeline">步骤时间线（最近 30 步）</span>
+          <span id="timeline-badge" class="badge badge-muted">0</span>
+        </summary>
+        <div id="timeline-body" class="drawer-body"></div>
+      </details>
+    </main>
+
+    <!-- Tab 2: Global Overview -->
+    <main id="view-overview" class="view hidden">
+      <div class="toolbar">
+        <div class="seg-group" id="source-filter" role="group" aria-label="Source filter">
+          <button class="seg-btn active" data-source="all" type="button" data-i18n="src.all">全部</button>
+          <button class="seg-btn" data-source="desktop" type="button" data-i18n="src.desktop">桌面端</button>
+          <button class="seg-btn" data-source="cli" type="button" data-i18n="src.cli">CLI</button>
+        </div>
+        <select id="sel-ref-model" class="select-sm" data-i18n-title="ctrl.refModelTitle" title="历史统计 API 参考计价模型">
+          <option value="gemini-3.8-flash" data-i18n="refModel.flash">参考模型: 3.8 Flash</option>
+          <option value="gemini-4-hydrogen" data-i18n="refModel.hydrogen">参考模型: 4 Hydrogen</option>
+          <option value="gemini-4-argon" data-i18n="refModel.argon">参考模型: 4 Argon</option>
+          <option value="gemini-4-carbon" data-i18n="refModel.carbon">参考模型: 4 Carbon</option>
+        </select>
+      </div>
+
+      <section class="summary-cards" id="overview-cards"></section>
+
+      <section class="card">
+        <div class="card-head">
+          <div class="seg-group" id="chart-tabs" role="tablist">
+            <button class="seg-btn active" data-chart="daily" type="button" data-i18n="chart.daily">每天</button>
+            <button class="seg-btn" data-chart="weekly" type="button" data-i18n="chart.weekly">每周</button>
+            <button class="seg-btn" data-chart="monthly" type="button" data-i18n="chart.monthly">每月</button>
+            <button class="seg-btn" data-chart="yearly" type="button" data-i18n="chart.yearly">今年</button>
+            <button class="seg-btn" data-chart="cum" type="button" data-i18n="chart.cum">累计</button>
+          </div>
+          <select id="sel-theme" class="select-sm" data-i18n-title="ctrl.themeTitle" title="热力图配色">
+            <option value="emerald" data-i18n="theme.emerald">翠绿</option>
+            <option value="ocean" data-i18n="theme.ocean">极光蓝</option>
+            <option value="violet" data-i18n="theme.violet">紫罗兰</option>
+            <option value="amber" data-i18n="theme.amber">琥珀</option>
+          </select>
+        </div>
+        <div id="chart-container" class="chart-wrap"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <span class="card-title" data-i18n="card.subCompare">API 参考金额与订阅对比（本月）</span>
+          <span id="sub-ratio-badge" class="badge badge-muted">—</span>
+        </div>
+        <div id="sub-compare-body" class="sub-body"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <span class="card-title" data-i18n="card.recentConvs">最近活跃会话（点击可预览）</span>
+          <span id="conv-count-badge" class="badge badge-muted">0</span>
+        </div>
+        <div id="recent-conv-list" class="conv-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="tooltip" class="tooltip hidden"></div>
+  <script src="/i18n.js"></script>
+  <script src="/pricing-client.js"></script>
+  <script src="/charts.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

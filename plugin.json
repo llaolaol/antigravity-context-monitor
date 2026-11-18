@@ -1,0 +1,21 @@
+{
+  "name": "context-monitor",
+  "displayName": "Context & Token Monitor",
+  "description": "Real-time context window usage, cache hit rate, generation speed, TTFT, and Desktop/CLI token analytics in the auxiliary pane.",
+  "version": "1.0.0",
+  "logo": "assets/logo.svg",
+  "author": {
+    "name": "llaolaol",
+    "url": "https://github.com/llaolaol"
+  },
+  "homepage": "https://github.com/llaolaol/antigravity-context-monitor",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/llaolaol/antigravity-context-monitor"
+  },
+  "suggestedPrompts": [
+    "Open Context & Tokens panel to check live context usage and speed",
+    "Inspect today's Desktop and CLI token consumption and cache hit rate",
+    "Compare monthly API reference cost against my subscription plan"
+  ]
+}

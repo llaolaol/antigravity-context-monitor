@@ -1,0 +1,19 @@
+# Dependencies & caches
+node_modules/
+.npm/
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Runtime & user data (never commit)
+sidecar_data/
+prefs.json
+runtime.json
+*.log
+
+# Environment & coverage
+.env
+.env.*
+coverage/

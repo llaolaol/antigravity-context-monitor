@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Validate plugin and sidecar manifests
+        run: |
+          node -e "
+            import { readFileSync } from 'node:fs';
+            const allowed = new Set([
+              'name', 'displayName', 'description', 'version',
+              'logo', 'author', 'homepage', 'repository',
+              'suggestedPrompts', 'disabled'
+            ]);
+            const plugin = JSON.parse(readFileSync('plugin.json', 'utf8'));
+            for (const k of Object.keys(plugin)) {
+              if (!allowed.has(k)) throw new Error('Unexpected top-level field in plugin.json: ' + k);
+            }
+            const sidecar = JSON.parse(readFileSync('sidecars/context-monitor/sidecar.json', 'utf8'));
+            if (!sidecar.has_web_ui || !sidecar.ui_config?.views?.length) {
+              throw new Error('Invalid sidecar.json UI configuration');
+            }
+            JSON.parse(readFileSync('package.json', 'utf8'));
+            JSON.parse(readFileSync('sidecars/context-monitor/package.json', 'utf8'));
+          "
+
+      - name: Lint shell scripts
+        if: runner.os != 'Windows'
+        run: bash -n install-top-capsule.sh uninstall-top-capsule.sh

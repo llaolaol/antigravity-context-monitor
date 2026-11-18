@@ -1,0 +1,13 @@
+{
+  "name": "antigravity-context-monitor",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Antigravity plugin for real-time context window usage, generation speed, TTFT, and Desktop/CLI token analytics.",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "test": "node --test sidecars/context-monitor/metrics.test.mjs top-capsule.test.mjs"
+  }
+}
