@@ -16,6 +16,29 @@
 
 ---
 
+## 界面预览
+
+**窗口顶部状态胶囊（可选增强）**
+
+![窗口顶部状态胶囊](./assets/screenshots/top-capsule.png)
+
+**侧边栏监控面板（当前会话 & Token 一览）**
+
+*（注：以下截图中的个人会话名称与具体数值已作脱敏马赛克处理；实际面板右上角支持一键切换 `中文 / EN`。）*
+
+<table>
+  <tr>
+    <th width="50%">当前会话监控与模型配额</th>
+    <th width="50%">Token 一览与订阅对比</th>
+  </tr>
+  <tr>
+    <td valign="top"><img src="./assets/screenshots/live-panel.png" alt="当前会话面板" width="100%" /></td>
+    <td valign="top"><img src="./assets/screenshots/token-overview.png" alt="Token 一览面板" width="100%" /></td>
+  </tr>
+</table>
+
+---
+
 ## 核心功能
 
 ### 1. 官方 Sidecar 侧边栏面板 (`Context & Tokens`)

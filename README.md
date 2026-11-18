@@ -16,6 +16,29 @@ Real-time context window usage, cache hit rate, generation speed, TTFT, and Desk
 
 ---
 
+## Preview
+
+**Titlebar Top Capsule (Optional)**
+
+![Titlebar Top Capsule](./assets/screenshots/top-capsule.png)
+
+**Sidecar Panel (`Live Session` & `Token Overview`)**
+
+*(Note: Personal session titles and numeric values in the screenshots below are mosaicked for privacy; the UI also supports a 1-click `中文 / EN` switcher.)*
+
+<table>
+  <tr>
+    <th width="50%">Live Session &amp; Model Quotas</th>
+    <th width="50%">Token Overview &amp; Cost Comparison</th>
+  </tr>
+  <tr>
+    <td valign="top"><img src="./assets/screenshots/live-panel.png" alt="Live Session Panel" width="100%" /></td>
+    <td valign="top"><img src="./assets/screenshots/token-overview.png" alt="Token Overview Panel" width="100%" /></td>
+  </tr>
+</table>
+
+---
+
 ## Features
 
 ### 1. Official Sidecar Panel (`Context & Tokens`)
